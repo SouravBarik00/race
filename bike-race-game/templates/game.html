@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Bike Race Game{% endblock %}
+
+{% block content %}
+<div class="container game-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h1>🏍️ Bike Race</h1>
+        <div>
+            <button onclick="showLeaderboard()" class="btn btn-secondary">Leaderboard</button>
+            <a href="/logout" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap;">
+        <div>Score: <span id="score">0</span></div>
+        <div>Distance: <span id="distance">0</span>m</div>
+        <div>Speed: <span id="speed">0</span> km/h</div>
+        <div>Best: <span id="bestScore">0</span></div>
+        <div id="gameStatus">Press SPACE or Arrow Keys to start</div>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600" style="border: 3px solid #333; background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);"></canvas>
+    
+    <div style="margin-top: 1rem;">
+        <p><strong>Controls:</strong> Left/Right Arrow Keys to steer, Up Arrow to accelerate, Down Arrow to brake</p>
+        <p><strong>Goal:</strong> Avoid obstacles, collect coins, and race as far as possible!</p>
+    </div>
+    
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 15px; max-width: 600px; width: 90%;">
+            <h2>🏆 Racing Leaderboard</h2>
+            <div id="leaderboardContent"></div>
+            <button onclick="hideLeaderboard()" class="btn" style="margin-top: 1rem;">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+const distanceElement = document.getElementById('distance');
+const speedElement = document.getElementById('speed');
+const bestScoreElement = document.getElementById('bestScore');
+const statusElement = document.getElementById('gameStatus');
+
+// Game variables
+let gameRunning = false;
+let score = 0;
+let distance = 0;
+let speed = 0;
+let bestScore = 0;
+
+// Player bike
+let player = {
+    x: canvas.width / 2 - 15,
+    y: canvas.height - 100,
+    width: 30,
+    height: 50,
+    speed: 0,
+    maxSpeed: 8,
+    acceleration: 0.2,
+    friction: 0.1
+};
+
+// Game objects
+let obstacles = [];
+let coins = [];
+let roadLines = [];
+let gameSpeed = 2;
+
+// Initialize road lines
+for (let i = 0; i < 20; i++) {
+    roadLines.push({
+        x: canvas.width / 2 - 5,
+        y: i * 40,
+        width: 10,
+        height: 20
+    });
+}
+
+// Input handling
+let keys = {};
+document.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    
+    if (!gameRunning && ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        startGame();
+    }
+    e.preventDefault();
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+});
+
+function startGame() {
+    gameRunning = true;
+    score = 0;
+    distance = 0;
+    speed = 0;
+    obstacles = [];
+    coins = [];
+    gameSpeed = 2;
+    player.x = canvas.width / 2 - 15;
+    player.speed = 0;
+    statusElement.textContent = 'Racing!';
+    gameLoop();
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+    
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function update() {
+    // Handle input
+    if (keys['ArrowLeft'] && player.x > 50) {
+        player.x -= 5;
+    }
+    if (keys['ArrowRight'] && player.x < canvas.width - 80) {
+        player.x += 5;
+    }
+    if (keys['ArrowUp']) {
+        player.speed = Math.min(player.speed + player.acceleration, player.maxSpeed);
+    } else if (keys['ArrowDown']) {
+        player.speed = Math.max(player.speed - player.friction * 2, 0);
+    } else {
+        player.speed = Math.max(player.speed - player.friction, 0);
+    }
+    
+    // Update game speed based on player speed
+    gameSpeed = 2 + player.speed * 0.5;
+    speed = Math.round(gameSpeed * 10);
+    distance += gameSpeed;
+    
+    // Update score
+    score += Math.round(gameSpeed);
+    scoreElement.textContent = score;
+    distanceElement.textContent = Math.round(distance);
+    speedElement.textContent = speed;
+    
+    // Move road lines
+    roadLines.forEach(line => {
+        line.y += gameSpeed;
+        if (line.y > canvas.height) {
+            line.y = -20;
+        }
+    });
+    
+    // Spawn obstacles
+    if (Math.random() < 0.02) {
+        obstacles.push({
+            x: Math.random() * (canvas.width - 100) + 50,
+            y: -50,
+            width: 40,
+            height: 60,
+            type: Math.random() < 0.5 ? 'car' : 'rock'
+        });
+    }
+    
+    // Spawn coins
+    if (Math.random() < 0.015) {
+        coins.push({
+            x: Math.random() * (canvas.width - 100) + 50,
+            y: -30,
+            width: 20,
+            height: 20
+        });
+    }
+    
+    // Update obstacles
+    obstacles.forEach((obstacle, index) => {
+        obstacle.y += gameSpeed;
+        
+        // Remove off-screen obstacles
+        if (obstacle.y > canvas.height) {
+            obstacles.splice(index, 1);
+        }
+        
+        // Check collision with player
+        if (checkCollision(player, obstacle)) {
+            gameOver();
+        }
+    });
+    
+    // Update coins
+    coins.forEach((coin, index) => {
+        coin.y += gameSpeed;
+        
+        // Remove off-screen coins
+        if (coin.y > canvas.height) {
+            coins.splice(index, 1);
+        }
+        
+        // Check collision with player
+        if (checkCollision(player, coin)) {
+            coins.splice(index, 1);
+            score += 50;
+        }
+    });
+}
+
+function draw() {
+    // Clear canvas with gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#98FB98');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw road
+    ctx.fillStyle = '#333';
+    ctx.fillRect(50, 0, canvas.width - 100, canvas.height);
+    
+    // Draw road lines
+    ctx.fillStyle = '#FFF';
+    roadLines.forEach(line => {
+        ctx.fillRect(line.x, line.y, line.width, line.height);
+    });
+    
+    // Draw road edges
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(45, 0, 10, canvas.height);
+    ctx.fillRect(canvas.width - 55, 0, 10, canvas.height);
+    
+    // Draw player bike
+    ctx.fillStyle = '#FF4444';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Add bike details
+    ctx.fillStyle = '#000';
+    ctx.fillRect(player.x + 5, player.y + 10, 5, 5); // Front wheel
+    ctx.fillRect(player.x + 20, player.y + 10, 5, 5); // Back wheel
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(player.x + 10, player.y + 5, 10, 8); // Body
+    
+    // Draw obstacles
+    obstacles.forEach(obstacle => {
+        if (obstacle.type === 'car') {
+            ctx.fillStyle = '#0066CC';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(obstacle.x + 5, obstacle.y + 10, obstacle.width - 10, 20);
+        } else {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        }
+    });
+    
+    // Draw coins
+    ctx.fillStyle = '#FFD700';
+    coins.forEach(coin => {
+        ctx.beginPath();
+        ctx.arc(coin.x + coin.width/2, coin.y + coin.height/2, coin.width/2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#FFA500';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('$', coin.x + coin.width/2, coin.y + coin.height/2 + 4);
+        ctx.fillStyle = '#FFD700';
+    });
+}
+
+function checkCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+function gameOver() {
+    gameRunning = false;
+    statusElement.textContent = 'Game Over! Press SPACE or Arrow Keys to restart';
+    
+    if (score > bestScore) {
+        bestScore = score;
+        bestScoreElement.textContent = bestScore;
+    }
+    
+    // Submit score to server
+    submitScore(score, Math.round(distance));
+}
+
+async function submitScore(score, distance) {
+    try {
+        await fetch('/submit_score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ score: score, distance: distance })
+        });
+    } catch (error) {
+        console.error('Error submitting score:', error);
+    }
+}
+
+async function loadBestScore() {
+    try {
+        const response = await fetch('/leaderboard');
+        const data = await response.json();
+        bestScore = data.user_best;
+        bestScoreElement.textContent = bestScore;
+    } catch (error) {
+        console.error('Error loading best score:', error);
+    }
+}
+
+async function showLeaderboard() {
+    try {
+        const response = await fetch('/leaderboard');
+        const data = await response.json();
+        
+        let content = '<table style="width: 100%; border-collapse: collapse;">';
+        content += '<tr style="background: #f0f0f0;"><th style="padding: 0.5rem; border: 1px solid #ddd;">Rank</th><th style="padding: 0.5rem; border: 1px solid #ddd;">Racer</th><th style="padding: 0.5rem; border: 1px solid #ddd;">Score</th><th style="padding: 0.5rem; border: 1px solid #ddd;">Distance</th><th style="padding: 0.5rem; border: 1px solid #ddd;">Date</th></tr>';
+        
+        data.leaderboard.forEach((entry, index) => {
+            content += `<tr><td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${index + 1}</td><td style="padding: 0.5rem; border: 1px solid #ddd;">${entry.username}</td><td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${entry.score}</td><td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${entry.distance}m</td><td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${entry.timestamp}</td></tr>`;
+        });
+        
+        content += '</table>';
+        content += `<p style="margin-top: 1rem;"><strong>Your Best Score: ${data.user_best} (${data.user_best_distance}m)</strong></p>`;
+        
+        document.getElementById('leaderboardContent').innerHTML = content;
+        document.getElementById('leaderboardModal').style.display = 'block';
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+    }
+}
+
+function hideLeaderboard() {
+    document.getElementById('leaderboardModal').style.display = 'none';
+}
+
+// Initialize game
+loadBestScore();
+</script>
+{% endblock %}

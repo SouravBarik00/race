@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Game Server Test</title>
+</head>
+<body>
+    <h1>🐍 Snake Game Server Test</h1>
+    <p>If you can see this page, the server is working!</p>
+    
+    <h2>Try these links:</h2>
+    <ul>
+        <li><a href="http://127.0.0.1:5000" target="_blank">Local: http://127.0.0.1:5000</a></li>
+        <li><a href="http://172.20.38.126:5000" target="_blank">Network: http://172.20.38.126:5000</a></li>
+    </ul>
+    
+    <h2>Server Status:</h2>
+    <div id="status">Testing...</div>
+    
+    <script>
+        fetch('http://127.0.0.1:5000/login')
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('status').innerHTML = '✅ Server is running and accessible!';
+                } else {
+                    document.getElementById('status').innerHTML = '❌ Server responded with error: ' + response.status;
+                }
+            })
+            .catch(error => {
+                document.getElementById('status').innerHTML = '❌ Cannot connect to server: ' + error.message;
+            });
+    </script>
+</body>
+</html>
