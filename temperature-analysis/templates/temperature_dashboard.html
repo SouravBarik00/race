@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌡️ India Temperature Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            padding: 2rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card p {
+            opacity: 0.9;
+        }
+        
+        .map-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .map-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .cities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .city-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .city-card:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        .city-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .city-temp {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .city-coords {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .temp-hot { color: #dc3545; }
+        .temp-warm { color: #fd7e14; }
+        .temp-mild { color: #28a745; }
+        .temp-cool { color: #007bff; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .dashboard { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ India Temperature Dashboard</h1>
+            <p>Real-time temperature monitoring across major Indian cities</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="controls">
+                <button class="btn" onclick="loadTemperatureData()">🔄 Refresh Data</button>
+                <button class="btn" onclick="toggleView()">📊 Toggle View</button>
+                <button class="btn" onclick="exportData()">💾 Export Data</button>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                🔄 Loading temperature data...
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <div id="stats-container" class="stats-grid" style="display: none;"></div>
+            
+            <div id="map-container" class="map-container" style="display: none;">
+                <h2>🗺️ Temperature Map</h2>
+                <img id="temperature-map" class="map-image" alt="Temperature Map">
+            </div>
+            
+            <div id="cities-container" class="cities-grid" style="display: none;"></div>
+            
+            <div id="timestamp" class="timestamp"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentView = 'map';
+        let temperatureData = null;
+        
+        function getTemperatureColor(temp) {
+            if (temp >= 35) return 'temp-hot';
+            if (temp >= 30) return 'temp-warm';
+            if (temp >= 25) return 'temp-mild';
+            return 'temp-cool';
+        }
+        
+        function formatTemperature(temp) {
+            return `${temp}°C`;
+        }
+        
+        async function loadTemperatureData() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/temperature-map');
+                const data = await response.json();
+                
+                if (data.success) {
+                    temperatureData = data;
+                    displayData();
+                    updateTimestamp(data.timestamp);
+                } else {
+                    throw new Error(data.error || 'Failed to load data');
+                }
+            } catch (error) {
+                console.error('Error loading temperature data:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        function displayData() {
+            if (!temperatureData) return;
+            
+            displayStats(temperatureData.stats);
+            
+            if (currentView === 'map') {
+                displayMap(temperatureData.map_image);
+                document.getElementById('cities-container').style.display = 'none';
+            } else {
+                displayCities(temperatureData.cities);
+                document.getElementById('map-container').style.display = 'none';
+            }
+        }
+        
+        function displayStats(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <h3>${stats.total_cities}</h3>
+                    <p>Cities Monitored</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.avg_temp}°C</h3>
+                    <p>Average Temperature</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.max_temp}°C</h3>
+                    <p>Highest (${stats.hottest_city})</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.min_temp}°C</h3>
+                    <p>Lowest (${stats.coolest_city})</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.cities_above_35}</h3>
+                    <p>Cities Above 35°C</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.temp_range}°C</h3>
+                    <p>Temperature Range</p>
+                </div>
+            `;
+            container.style.display = 'grid';
+        }
+        
+        function displayMap(mapImage) {
+            const container = document.getElementById('map-container');
+            const img = document.getElementById('temperature-map');
+            
+            img.src = `data:image/png;base64,${mapImage}`;
+            container.style.display = 'block';
+        }
+        
+        function displayCities(cities) {
+            const container = document.getElementById('cities-container');
+            
+            const cityCards = Object.entries(cities).map(([name, data]) => `
+                <div class="city-card">
+                    <div class="city-name">${name}</div>
+                    <div class="city-temp ${getTemperatureColor(data.temp)}">${formatTemperature(data.temp)}</div>
+                    <div class="city-coords">📍 ${data.lat.toFixed(2)}°N, ${data.lon.toFixed(2)}°E</div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = cityCards;
+            container.style.display = 'grid';
+        }
+        
+        function toggleView() {
+            currentView = currentView === 'map' ? 'cities' : 'map';
+            
+            if (temperatureData) {
+                displayData();
+            }
+        }
+        
+        function exportData() {
+            if (!temperatureData) {
+                alert('No data to export. Please load data first.');
+                return;
+            }
+            
+            const exportData = {
+                timestamp: temperatureData.timestamp,
+                stats: temperatureData.stats,
+                cities: temperatureData.cities
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `india-temperature-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+        
+        function updateTimestamp(timestamp) {
+            const timestampEl = document.getElementById('timestamp');
+            const date = new Date(timestamp);
+            timestampEl.textContent = `Last updated: ${date.toLocaleString()}`;
+        }
+        
+        // Auto-refresh every 5 minutes
+        setInterval(loadTemperatureData, 5 * 60 * 1000);
+        
+        // Load data on page load
+        window.addEventListener('load', loadTemperatureData);
+    </script>
+</body>
+</html>

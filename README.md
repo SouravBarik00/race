@@ -16,10 +16,11 @@ A comprehensive collection of web-based games with user authentication, database
 - **Scoring**: Food collection and survival time
 - **Controls**: Arrow keys for movement
 
-### 🌡️ Temperature Analysis
-- **Type**: Data analysis project
-- **Features**: India temperature data visualization and analysis
-- **Output**: Statistical analysis and temperature trend graphs
+### 🌡️ Temperature Dashboard
+- **Port**: 5002
+- **Features**: Interactive temperature map of India, real-time data visualization
+- **Data**: Live temperature readings from 25+ major Indian cities
+- **Visualization**: Color-coded temperature map with city details
 
 ## 🚀 Quick Start
 
@@ -48,10 +49,20 @@ pip install Flask==2.3.3 Flask-SQLAlchemy==3.0.5 Werkzeug==2.3.7
 python app.py
 ```
 
+**Temperature Dashboard:**
+```bash
+cd temperature-analysis
+python3 -m venv temp_env
+source temp_env/bin/activate
+pip install Flask==2.3.3 matplotlib pandas numpy
+python app.py
+```
+
 ## 🌐 Access URLs
 
 - **Bike Race Game**: http://localhost:5001
 - **Snake Game**: http://localhost:5000
+- **Temperature Dashboard**: http://localhost:5002
 
 ## 🔧 System Features
 
@@ -110,7 +121,7 @@ cd snake-game && python3 view_database.py
 web-games-collection/
 ├── bike-race-game/          # 🏍️ Bike racing game
 ├── snake-game/             # 🐍 Snake game
-├── temperature-analysis/    # 🌡️ Data analysis project
+├── temperature-analysis/    # 🌡️ Interactive temperature dashboard
 └── start_games.sh          # Quick start script
 ```
 
