@@ -22,6 +22,12 @@ A comprehensive collection of web-based games with user authentication, database
 - **Data**: Live temperature readings from 25+ major Indian cities
 - **Visualization**: Color-coded temperature map with city details
 
+### 📊 Database Viewer
+- **Port**: 5003
+- **Features**: Real-time database monitoring, comprehensive data analytics
+- **Data**: Live view of all user data, scores, login logs, and statistics
+- **API**: REST endpoints for programmatic access to database information
+
 ## 🚀 Quick Start
 
 ### Start All Games
@@ -58,11 +64,21 @@ pip install Flask==2.3.3 matplotlib pandas numpy
 python app.py
 ```
 
+**Database Viewer:**
+```bash
+cd database-viewer
+python3 -m venv db_env
+source db_env/bin/activate
+pip install Flask==2.3.3
+python app.py
+```
+
 ## 🌐 Access URLs
 
 - **Bike Race Game**: http://localhost:5001
 - **Snake Game**: http://localhost:5000
 - **Temperature Dashboard**: http://localhost:5002
+- **Database Viewer**: http://localhost:5003
 
 ## 🔧 System Features
 
@@ -122,6 +138,7 @@ web-games-collection/
 ├── bike-race-game/          # 🏍️ Bike racing game
 ├── snake-game/             # 🐍 Snake game
 ├── temperature-analysis/    # 🌡️ Interactive temperature dashboard
+├── database-viewer/        # 📊 Real-time database monitoring
 └── start_games.sh          # Quick start script
 ```
 

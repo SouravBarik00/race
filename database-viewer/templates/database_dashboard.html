@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Database Dashboard - Web Games Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            padding: 2rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card p {
+            opacity: 0.9;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .data-table th {
+            background: #667eea;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .api-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .api-info h4 {
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .api-info code {
+            background: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .temp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .temp-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .temp-card:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        .temp-hot { border-color: #dc3545; }
+        .temp-warm { border-color: #fd7e14; }
+        .temp-mild { border-color: #28a745; }
+        .temp-cool { border-color: #007bff; }
+        
+        .city-name {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .city-temp {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .city-coords {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .dashboard { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .data-table { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Database Dashboard</h1>
+            <p>Real-time database monitoring for Web Games Collection</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="controls">
+                <button class="btn" onclick="loadDatabaseData()">🔄 Refresh Data</button>
+                <button class="btn" onclick="exportAllData()">💾 Export All Data</button>
+                <button class="btn" onclick="toggleSection('bike-race')">🏍️ Toggle Bike Race</button>
+                <button class="btn" onclick="toggleSection('snake-game')">🐍 Toggle Snake Game</button>
+                <button class="btn" onclick="toggleSection('temperature')">🌡️ Toggle Temperature</button>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                🔄 Loading database information...
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <!-- API Information -->
+            <div class="api-info">
+                <h4>🔗 API Endpoints</h4>
+                <p><strong>All Data:</strong> <code>/api/database-data</code></p>
+                <p><strong>Bike Race:</strong> <code>/api/bike-race</code> | <strong>Snake Game:</strong> <code>/api/snake-game</code> | <strong>Temperature:</strong> <code>/api/temperature</code></p>
+            </div>
+            
+            <!-- Bike Race Section -->
+            <div id="bike-race-section" class="section">
+                <h2>🏍️ Bike Race Game Database</h2>
+                <div id="bike-race-stats" class="stats-grid"></div>
+                
+                <h3>👥 Registered Racers</h3>
+                <div id="bike-race-users"></div>
+                
+                <h3>🏆 Top Race Scores</h3>
+                <div id="bike-race-scores"></div>
+                
+                <h3>🔐 Recent Logins</h3>
+                <div id="bike-race-logins"></div>
+            </div>
+            
+            <!-- Snake Game Section -->
+            <div id="snake-game-section" class="section">
+                <h2>🐍 Snake Game Database</h2>
+                <div id="snake-game-stats" class="stats-grid"></div>
+                
+                <h3>👥 Registered Players</h3>
+                <div id="snake-game-users"></div>
+                
+                <h3>🏆 High Scores</h3>
+                <div id="snake-game-scores"></div>
+                
+                <h3>🔐 Recent Logins</h3>
+                <div id="snake-game-logins"></div>
+            </div>
+            
+            <!-- Temperature Section -->
+            <div id="temperature-section" class="section">
+                <h2>🌡️ Temperature Dashboard Data</h2>
+                <div id="temperature-stats" class="stats-grid"></div>
+                
+                <h3>🗺️ City Temperature Data</h3>
+                <div id="temperature-cities" class="temp-grid"></div>
+            </div>
+            
+            <div id="timestamp" class="timestamp"></div>
+        </div>
+    </div>
+
+    <script>
+        let databaseData = null;
+        
+        function getTemperatureClass(temp) {
+            if (temp >= 35) return 'temp-hot';
+            if (temp >= 30) return 'temp-warm';
+            if (temp >= 25) return 'temp-mild';
+            return 'temp-cool';
+        }
+        
+        async function loadDatabaseData() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/database-data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    databaseData = data;
+                    displayAllData();
+                    updateTimestamp(data.timestamp);
+                } else {
+                    throw new Error(data.error || 'Failed to load database data');
+                }
+            } catch (error) {
+                console.error('Error loading database data:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        function displayAllData() {
+            if (!databaseData) return;
+            
+            displayBikeRaceData(databaseData.bike_race);
+            displaySnakeGameData(databaseData.snake_game);
+            displayTemperatureData(databaseData.temperature);
+        }
+        
+        function displayBikeRaceData(data) {
+            if (!data) {
+                document.getElementById('bike-race-section').innerHTML = '<h2>🏍️ Bike Race Game Database</h2><p>Database not found. Start the game to create it.</p>';
+                return;
+            }
+            
+            // Stats
+            const statsHtml = `
+                <div class="stat-card">
+                    <h3>${data.stats.user_count}</h3>
+                    <p>Registered Racers</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.race_count}</h3>
+                    <p>Total Races</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.max_score}</h3>
+                    <p>Highest Score</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.max_distance}m</h3>
+                    <p>Longest Distance</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.avg_score}</h3>
+                    <p>Average Score</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.avg_distance}m</h3>
+                    <p>Average Distance</p>
+                </div>
+            `;
+            document.getElementById('bike-race-stats').innerHTML = statsHtml;
+            
+            // Users
+            const usersHtml = data.users.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>ID</th><th>Username</th><th>Email</th><th>Joined</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.users.map(user => `
+                            <tr>
+                                <td>${user[0]}</td>
+                                <td>${user[1]}</td>
+                                <td>${user[2]}</td>
+                                <td>${new Date(user[3]).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No users found.</p>';
+            document.getElementById('bike-race-users').innerHTML = usersHtml;
+            
+            // Scores
+            const scoresHtml = data.scores.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Score</th><th>Distance</th><th>Racer</th><th>Date</th><th>IP</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.scores.map(score => `
+                            <tr>
+                                <td><strong>${score[0]}</strong></td>
+                                <td>${score[1]}m</td>
+                                <td>${score[2]}</td>
+                                <td>${new Date(score[3]).toLocaleString()}</td>
+                                <td>${score[4]}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No scores found.</p>';
+            document.getElementById('bike-race-scores').innerHTML = scoresHtml;
+            
+            // Logins
+            const loginsHtml = data.logins.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Racer</th><th>Login Time</th><th>IP Address</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.logins.map(login => `
+                            <tr>
+                                <td>${login[0]}</td>
+                                <td>${new Date(login[1]).toLocaleString()}</td>
+                                <td>${login[2]}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No login logs found.</p>';
+            document.getElementById('bike-race-logins').innerHTML = loginsHtml;
+        }
+        
+        function displaySnakeGameData(data) {
+            if (!data) {
+                document.getElementById('snake-game-section').innerHTML = '<h2>🐍 Snake Game Database</h2><p>Database not found. Start the game to create it.</p>';
+                return;
+            }
+            
+            // Stats
+            const statsHtml = `
+                <div class="stat-card">
+                    <h3>${data.stats.user_count}</h3>
+                    <p>Registered Players</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.game_count}</h3>
+                    <p>Total Games</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.max_score}</h3>
+                    <p>Highest Score</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.avg_score}</h3>
+                    <p>Average Score</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.successful_games}</h3>
+                    <p>Successful Games</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.success_rate}%</h3>
+                    <p>Success Rate</p>
+                </div>
+            `;
+            document.getElementById('snake-game-stats').innerHTML = statsHtml;
+            
+            // Users
+            const usersHtml = data.users.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>ID</th><th>Username</th><th>Email</th><th>Joined</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.users.map(user => `
+                            <tr>
+                                <td>${user[0]}</td>
+                                <td>${user[1]}</td>
+                                <td>${user[2]}</td>
+                                <td>${new Date(user[3]).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No users found.</p>';
+            document.getElementById('snake-game-users').innerHTML = usersHtml;
+            
+            // Scores
+            const scoresHtml = data.scores.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Score</th><th>Player</th><th>Date</th><th>IP</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.scores.map(score => `
+                            <tr>
+                                <td><strong>${score[0]}</strong></td>
+                                <td>${score[1]}</td>
+                                <td>${new Date(score[2]).toLocaleString()}</td>
+                                <td>${score[3]}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No scores found.</p>';
+            document.getElementById('snake-game-scores').innerHTML = scoresHtml;
+            
+            // Logins
+            const loginsHtml = data.logins.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Player</th><th>Login Time</th><th>IP Address</th></tr>
+                    </thead>
+                    <tbody>
+                        ${data.logins.map(login => `
+                            <tr>
+                                <td>${login[0]}</td>
+                                <td>${new Date(login[1]).toLocaleString()}</td>
+                                <td>${login[2]}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : '<p>No login logs found.</p>';
+            document.getElementById('snake-game-logins').innerHTML = loginsHtml;
+        }
+        
+        function displayTemperatureData(data) {
+            // Stats
+            const statsHtml = `
+                <div class="stat-card">
+                    <h3>${data.stats.total_cities}</h3>
+                    <p>Cities Monitored</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.avg_temp}°C</h3>
+                    <p>Average Temperature</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.max_temp}°C</h3>
+                    <p>Highest (${data.stats.hottest_city})</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.min_temp}°C</h3>
+                    <p>Lowest (${data.stats.coolest_city})</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.cities_above_35}</h3>
+                    <p>Cities Above 35°C</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${data.stats.cities_below_30}</h3>
+                    <p>Cities Below 30°C</p>
+                </div>
+            `;
+            document.getElementById('temperature-stats').innerHTML = statsHtml;
+            
+            // Cities
+            const citiesHtml = Object.entries(data.cities).map(([name, cityData]) => `
+                <div class="temp-card ${getTemperatureClass(cityData.temp)}">
+                    <div class="city-name">${name}</div>
+                    <div class="city-temp">${cityData.temp}°C</div>
+                    <div class="city-coords">📍 ${cityData.lat.toFixed(2)}°N, ${cityData.lon.toFixed(2)}°E</div>
+                </div>
+            `).join('');
+            document.getElementById('temperature-cities').innerHTML = citiesHtml;
+        }
+        
+        function toggleSection(sectionName) {
+            const section = document.getElementById(sectionName + '-section');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function exportAllData() {
+            if (!databaseData) {
+                alert('No data to export. Please load data first.');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(databaseData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `web-games-database-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+        
+        function updateTimestamp(timestamp) {
+            const timestampEl = document.getElementById('timestamp');
+            const date = new Date(timestamp);
+            timestampEl.innerHTML = `
+                <strong>Last Updated:</strong> ${date.toLocaleString()}<br>
+                <strong>Database Locations:</strong><br>
+                🏍️ Bike Race: /home/sourav/bike-race-game/instance/bike_race.db<br>
+                🐍 Snake Game: /home/sourav/snake-game/instance/snake_game.db<br>
+                🌡️ Temperature: In-memory data
+            `;
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadDatabaseData, 30000);
+        
+        // Load data on page load
+        window.addEventListener('load', loadDatabaseData);
+    </script>
+</body>
+</html>
