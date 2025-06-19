@@ -147,6 +147,25 @@ def leaderboard():
         'current_user': session.get('username', '')
     })
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for load balancer"""
+    try:
+        # Check database connection
+        db.session.execute(text('SELECT 1'))
+        return jsonify({
+            'status': 'healthy',
+            'service': 'bike-race-game',
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'service': 'bike-race-game',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 503
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
